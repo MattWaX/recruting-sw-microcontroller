@@ -321,7 +321,7 @@ $(BUILD_DIRECTORY): | $(RELEASE_DIRECTORY)
 # flash
 #######################################
 flash: all
-	"$(OPENOCD)" -f ./openocd.cfg -c "program $(RELEASE_DIRECTORY)/$(TARGET).elf verify reset exit"
+    # st-flash write "$(RELEASE_DIRECTORY)/$(TARGET).elf" 0x8000000 # "$(OPENOCD)" -f ./openocd.cfg -c "program $(RELEASE_DIRECTORY)/$(TARGET).elf verify reset exit"
 
 #######################################
 # erase
