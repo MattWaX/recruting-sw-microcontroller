@@ -1,0 +1,31 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/arm-none-eabi-gcc",
+      "-c",
+      "-mcpu=cortex-m0plus",
+      "-mthumb",
+      "-DSTM32C031xx",
+      "-DUSE_HAL_DRIVER",
+      "-ICore/Inc",
+      "-IDrivers/CMSIS/Device/ST/STM32C0xx/Include",
+      "-IDrivers/CMSIS/Include",
+      "-IDrivers/STM32C0xx_HAL_Driver/Inc",
+      "-IDrivers/STM32C0xx_HAL_Driver/Inc/Legacy",
+      "-Og",
+      "-g",
+      "-gdwarf",
+      "-ggdb",
+      "-Wall",
+      "-fdata-sections",
+      "-ffunction-sections",
+      "-Wa,-a,-ad,-alms=build/debug/main.lst",
+      "-o",
+      "build/debug/main.o",
+      "Core/Src/main.c"
+    ],
+    "directory": "/home/MattWaX/Projects/recruting-sw-microcontroller",
+    "file": "/home/MattWaX/Projects/recruting-sw-microcontroller/Core/Src/main.c",
+    "output": "/home/MattWaX/Projects/recruting-sw-microcontroller/build/debug/main.o"
+  }
+]
