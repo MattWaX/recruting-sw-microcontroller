@@ -189,9 +189,8 @@ $(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 $(BUILD_DIR):
 	mkdir $@		
 
-# FLASH
-flash: 
-	st-flash --reset write build/test.bin 0x8000000
+flash: $(BUILD_DIR)/$(TARGET).bin
+	st-flash --reset write $< 0x8000000
 
 #######################################
 # clean up
