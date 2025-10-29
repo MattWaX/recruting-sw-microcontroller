@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "stdio.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -103,10 +103,11 @@ int main(void)
     /* USER CODE BEGIN 3 */
                 // HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
                 // HAL_Delay(1000);
-                sprintf(MSG, "Hello Dudes! Tracing X = %d\r\n", X);
+                X = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4);
+                sprintf(MSG, "PA4 state = %d\r\n", X);
                 HAL_UART_Transmit(&huart2, MSG, sizeof(MSG), 100);
                 HAL_Delay(500);
-                X++;
+                // X++;
         }
   /* USER CODE END 3 */
 }
