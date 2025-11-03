@@ -104,12 +104,16 @@ int main(void) {
         MX_ADC1_Init();
         MX_TIM3_Init();
         /* USER CODE BEGIN 2 */
+        // init message
+        uint8_t SMSG[] = "\r\n== Program started ==\r\n";
+        HAL_UART_Transmit(&huart2, SMSG, sizeof(SMSG), 100);
+
         HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
         HAL_ADCEx_Calibration_Start(&hadc1);
 
-        HAL_UART_Receive_IT(&huart2, USART_Buffer, 12);
-
-
+        HAL_UART_Receive(&huart2, USART_Buffer, 12, 5000);
+        // sprintf(MSG, "%s\r\n", USART_Buffer);
+        HAL_UART_Transmit(&huart2, USART_Buffer, 12, 100);
         /* USER CODE END 2 */
 
         /* Infinite loop */
@@ -117,9 +121,10 @@ int main(void) {
         while (1) {
                 /* USER CODE END WHILE */
 
-                HAL_UART_Transmit(&huart2, USART_Buffer, 12, 100);
                 /* USER CODE BEGIN 3 */
 
+        // sprintf(MSG, "sesso\r\n");
+        // HAL_UART_Transmit(&huart2, USART_Buffer, 12, 100);
                 // HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
                 // HAL_Delay(1000);
                 // X = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4);
