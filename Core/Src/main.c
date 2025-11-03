@@ -64,7 +64,7 @@ static void MX_TIM3_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+uint32_t AD_RES = 0;
 /* USER CODE END 0 */
 
 /**
@@ -74,9 +74,8 @@ static void MX_TIM3_Init(void);
 int main(void) {
 
         /* USER CODE BEGIN 1 */
-        uint8_t MSG[100] = {'\0'};
+        uint8_t MSG[1024] = {'\0'};
         uint8_t X = 0;
-        uint32_t AD_RES = 0;
         /* USER CODE END 1 */
 
         /* MCU
@@ -120,14 +119,16 @@ int main(void) {
                 // sprintf(MSG, "value = %d\r\n", X);
                 // HAL_Delay(500);
                 // X++;
-                //
-                // HAL_ADC_Start(&hadc1);
-                // HAL_ADC_PollForConversion(&hadc1, 1);
-                // AD_RES = HAL_ADC_GetValue(&hadc1);
-                // TIM3->CCR1 = (AD_RES<<4);
+                
+                // Start the DMA conversion and pass the ADC instance
                 HAL_ADC_Start_DMA(&hadc1, &AD_RES, 1);
-                sprintf(MSG, "PB1 state = %d\r\n", AD_RES);
+                AD_RES = HAL_ADC_GetValue(&hadc1);
+
+                // saving in memory the debug message
+                sprintf(MSG, "PB1 state = %5d\r\n", AD_RES);
+                // serial transmit of debug information
                 HAL_UART_Transmit(&huart2, MSG, sizeof(MSG), 100);
+
                 HAL_Delay(500);
         }
         /* USER CODE END 3 */
@@ -369,6 +370,12 @@ static void MX_GPIO_Init(void) {
 
 /* USER CODE BEGIN 4 */
 
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
+        // Conversion Complete & DMA Transfer Complete As Well
+        // So The AD_RES Is Now Updated & Let's Move IT To The PWM CCR1
+        // Update The PWM Duty Cycle With Latest ADC Conversion Result
+        TIM3->CCR1 = (AD_RES << 4);
+}
 /* USER CODE END 4 */
 
 /**
