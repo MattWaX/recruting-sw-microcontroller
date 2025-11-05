@@ -1,5 +1,7 @@
 #include "main.h"
 
+#define SERIAL_MSG_DIM 8
+
 enum FSM_State { Init, Wait_Request, Listening, Pause, Warning, Error };
 
 void FSM(enum FSM_State *state, 

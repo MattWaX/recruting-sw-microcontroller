@@ -53,41 +53,37 @@ void listening(enum FSM_State *state, UART_HandleTypeDef *huart,
                 return;
         }
 
-        uint32_t AD_RES;
-        uint8_t D_State;
+        uint32_t AD_val;
+        uint8_t D_val;
+
+        uint8_t serial_msg[SERIAL_MSG_DIM] = {'\0'};
 
         // Digital pin read
-        D_State = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4);
+        D_val = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4);
 
         // Start the DMA conversion and pass the ADC instance
-        AD_RES = 0;
-        HAL_ADC_Start_DMA(hadc, &AD_RES, 1);
-        AD_RES = HAL_ADC_GetValue(hadc);
+        AD_val = 0;
+        HAL_ADC_Start_DMA(hadc, &AD_val, 1);
+        AD_val = HAL_ADC_GetValue(hadc);
 
         // Send data to serial
-        uint8_t AD_arr[2];
-        for (int i = 0; i < 2; ++i) {
-                AD_arr[1-i] = (uint8_t)(AD_RES >>i * 8);
-        }
-        uint8_t MSG[8] = {'\0'};
 
-        // MSG[0] = 0x1;
-        MSG[3] = D_State;
-        // MSG[4] = 0x1;
-        for(int i = 0; i < 2; ++i)
-                MSG[i+6] = AD_arr[i];
+        // digital ch  |   analog ch
+        // 00 00 00 00 | 00 00 00 10 ~
+        // 00 00 00 01 | 00 00 0e 00 ~
+        serial_msg[3] = D_val;
 
-        uint8_t debug[100] = {'\0'};
-        // sprintf(MSG, "%02c%01c%01c", AD_arr[0],AD_arr[1], 0x1);
-        // sprintf(debug, "size: %d |%02x %02x%02x %02x  %02x %02x%02x %02x\r\n", sizeof(AD_arr),MSG[0], MSG[1], MSG[2], MSG[3], MSG[4], MSG[5], MSG[6], MSG[7]);
-        // sprintf(debug, "%c\r\n", AD_arr[0]);
-        HAL_UART_Transmit(huart, MSG, sizeof(MSG), 0xFFFF);
-        // HAL_UART_Transmit(huart, debug, sizeof(debug), 0xFFFF);
+        for (int i = 0; i < 2; ++i)
+                serial_msg[SERIAL_MSG_DIM - 1 - i] = (uint8_t)(AD_val >> (i * 8));
+
+        // Transmitting the msg to the uart, the data stream will be read
+        // with SerialPlot as raw binary stream
+        HAL_UART_Transmit(huart, serial_msg, SERIAL_MSG_DIM, 0xFFFF);
 
         // Conversion Complete & DMA Transfer Complete As Well
         // So The AD_RES Is Now Updated & Let's Move IT To The PWM CCR1
         // Update The PWM Duty Cycle With Latest ADC Conversion Result
-        TIM3->CCR1 = (AD_RES << 4);
+        TIM3->CCR1 = (AD_val << 4);
 }
 
 void pause(enum FSM_State *state) {
