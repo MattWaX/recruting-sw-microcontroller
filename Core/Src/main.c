@@ -66,9 +66,7 @@ static void MX_TIM3_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-enum FSM_State state = Listening;
-uint32_t AD_RES = 0;
-uint8_t USART_Buffer[12] = {'\0'};
+enum FSM_State state = Init;
 /* USER CODE END 0 */
 
 /**
@@ -106,14 +104,8 @@ int main(void) {
         MX_ADC1_Init();
         MX_TIM3_Init();
         /* USER CODE BEGIN 2 */
-        // init message
-        // uint8_t SMSG[] = "\r\n== Program started ==\r\n";
-        // HAL_UART_Transmit(&huart2, SMSG, sizeof(SMSG), 100);
-
         HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-        HAL_ADCEx_Calibration_Start(&hadc1);
 
-        // HAL_UART_Receive_DMA(&huart2, USART_Buffer, 12);
         /* USER CODE END 2 */
 
         /* Infinite loop */
@@ -372,11 +364,16 @@ static void MX_GPIO_Init(void) {
 /* USER CODE BEGIN 4 */
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-        HAL_UART_Transmit(&huart2, USART_Buffer, 12, 1000);
-        HAL_UART_Receive_DMA(&huart2, USART_Buffer, 12);
+        // HAL_UART_Transmit(&huart2, USART_Buffer, 12, 1000);
+        // HAL_UART_Receive_DMA(&huart2, USART_Buffer, 12);
 }
 
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+        if (state == Error)
+                HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+        HAL_UART_Transmit(&huart2, "hello\r\n", 12, 1000);
 }
 /* USER CODE END 4 */
 

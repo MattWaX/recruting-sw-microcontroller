@@ -6,7 +6,7 @@ void FSM(enum FSM_State *state, UART_HandleTypeDef *huart,
          ADC_HandleTypeDef *hadc) {
         switch (*state) {
         case Init:
-                init(state);
+                init(state, hadc);
                 break;
 
         case Wait_Request:
@@ -31,7 +31,11 @@ void FSM(enum FSM_State *state, UART_HandleTypeDef *huart,
         }
 }
 
-void init(enum FSM_State *state) { *state = Wait_Request; }
+void init(enum FSM_State *state, ADC_HandleTypeDef *hadc) {
+        HANDLE_HAL_ERROR(HAL_ADCEx_Calibration_Start(hadc));
+
+        *state = Wait_Request;
+}
 
 void wait_request(enum FSM_State *state) {
         // Led Pin Off
@@ -52,6 +56,7 @@ void listening(enum FSM_State *state, UART_HandleTypeDef *huart,
                 *state = Pause;
                 return;
         }
+        HAL_StatusTypeDef HAL_status = HAL_OK;
 
         uint32_t AD_val;
         uint8_t D_val;
@@ -63,7 +68,7 @@ void listening(enum FSM_State *state, UART_HandleTypeDef *huart,
 
         // Start the DMA conversion and pass the ADC instance
         AD_val = 0;
-        HAL_ADC_Start_DMA(hadc, &AD_val, 1);
+        HANDLE_HAL_ERROR(HAL_ADC_Start_DMA(hadc, &AD_val, 1));
         AD_val = HAL_ADC_GetValue(hadc);
 
         // Send data to serial
@@ -74,11 +79,13 @@ void listening(enum FSM_State *state, UART_HandleTypeDef *huart,
         serial_msg[3] = D_val;
 
         for (int i = 0; i < 2; ++i)
-                serial_msg[SERIAL_MSG_DIM - 1 - i] = (uint8_t)(AD_val >> (i * 8));
+                serial_msg[SERIAL_MSG_DIM - 1 - i] =
+                    (uint8_t)(AD_val >> (i * 8));
 
         // Transmitting the msg to the uart, the data stream will be read
         // with SerialPlot as raw binary stream
-        HAL_UART_Transmit(huart, serial_msg, SERIAL_MSG_DIM, 0xFFFF);
+        HANDLE_HAL_ERROR(
+            HAL_UART_Transmit(huart, serial_msg, SERIAL_MSG_DIM, 0xFFFF));
 
         // Conversion Complete & DMA Transfer Complete As Well
         // So The AD_RES Is Now Updated & Let's Move IT To The PWM CCR1
@@ -95,13 +102,13 @@ void pause(enum FSM_State *state) {
 }
 
 void warning(enum FSM_State *state, UART_HandleTypeDef *huart) {
-        uint8_t MSG[] = "WARNING\r\n";
-        HAL_UART_Transmit(huart, MSG, sizeof(MSG), 100);
+        uint8_t warning_msg[] = "WARNING\r\n";
+        HAL_UART_Transmit(huart, warning_msg, sizeof(warning_msg), 100);
 }
 
 void error(enum FSM_State *state, UART_HandleTypeDef *huart) {
-        uint8_t MSG[] = "ERROR\r\n";
-        HAL_UART_Transmit(huart, MSG, sizeof(MSG), 100);
-        HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-        HAL_Delay(1000);
+        uint8_t error_msg[] = "ERROR\r\n";
+        HAL_UART_Transmit(huart, error_msg, sizeof(error_msg), 100);
+        // HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+        // HAL_Delay(1000);
 }
