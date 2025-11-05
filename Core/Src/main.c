@@ -66,7 +66,7 @@ static void MX_TIM3_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-enum FSM_State state = Wait_Request;
+enum FSM_State state = Listening;
 uint32_t AD_RES = 0;
 uint8_t USART_Buffer[12] = {'\0'};
 /* USER CODE END 0 */

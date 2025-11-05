@@ -65,21 +65,24 @@ void listening(enum FSM_State *state, UART_HandleTypeDef *huart,
         AD_RES = HAL_ADC_GetValue(hadc);
 
         // Send data to serial
-        uint8_t AD_arr[4];
-        for (int i = 0; i < 4; ++i) {
-                AD_arr[3-i] = (AD_RES >> (i * 8));
+        uint8_t AD_arr[2];
+        for (int i = 0; i < 2; ++i) {
+                AD_arr[1-i] = (uint8_t)(AD_RES >>i * 8);
         }
         uint8_t MSG[8] = {'\0'};
 
+        // MSG[0] = 0x1;
         MSG[3] = D_State;
-        for(int i = 4; i < 8; ++i)
-                MSG[i] = AD_arr[i-4];
+        // MSG[4] = 0x1;
+        for(int i = 0; i < 2; ++i)
+                MSG[i+6] = AD_arr[i];
 
-        // sprintf(MSG, "%4c%4s", D_State, AD_arr);
-        // for (int i = 0; i < 8; ++i)
-        //         if (MSG[i] == ' ')
-        //                 MSG[i] = '\0';
-        HAL_UART_Transmit(huart, MSG, sizeof(MSG), 100);
+        uint8_t debug[100] = {'\0'};
+        // sprintf(MSG, "%02c%01c%01c", AD_arr[0],AD_arr[1], 0x1);
+        // sprintf(debug, "size: %d |%02x %02x%02x %02x  %02x %02x%02x %02x\r\n", sizeof(AD_arr),MSG[0], MSG[1], MSG[2], MSG[3], MSG[4], MSG[5], MSG[6], MSG[7]);
+        // sprintf(debug, "%c\r\n", AD_arr[0]);
+        HAL_UART_Transmit(huart, MSG, sizeof(MSG), 0xFFFF);
+        // HAL_UART_Transmit(huart, debug, sizeof(debug), 0xFFFF);
 
         // Conversion Complete & DMA Transfer Complete As Well
         // So The AD_RES Is Now Updated & Let's Move IT To The PWM CCR1
