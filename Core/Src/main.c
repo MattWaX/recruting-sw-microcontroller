@@ -68,7 +68,7 @@ static void MX_TIM14_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-enum FSM_State state = Init;
+enum FSM_State state = Pause;
 /* USER CODE END 0 */
 
 /**
@@ -108,7 +108,7 @@ int main(void) {
         MX_TIM14_Init();
         /* USER CODE BEGIN 2 */
         HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-        HAL_TIM_Base_Start_IT(&htim14);
+        HAL_TIM_PWM_Start(&htim14, TIM_CHANNEL_1);
 
         /* USER CODE END 2 */
 
@@ -124,7 +124,7 @@ int main(void) {
                 // serial transmit of debug information
                 // HAL_UART_Transmit(&huart2, MSG, sizeof(MSG), 100);
 
-                FSM(&state, &huart2, &hadc1);
+                FSM(&state, &huart2, &hadc1, &htim14);
         }
         /* USER CODE END 3 */
 }
@@ -289,7 +289,7 @@ static void MX_TIM14_Init(void) {
         htim14.Instance = TIM14;
         htim14.Init.Prescaler = 999;
         htim14.Init.CounterMode = TIM_COUNTERMODE_UP;
-        htim14.Init.Period = 4799;
+        htim14.Init.Period = 28799;
         htim14.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
         htim14.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
         if (HAL_TIM_Base_Init(&htim14) != HAL_OK) {
@@ -404,11 +404,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {}
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-        if (htim->Instance == TIM14) {
-                if (state == Error)
-                        HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-                HAL_UART_Transmit(&huart2, "hello\r\n", 12, 1000);
-        }
+        // if (htim->Instance == TIM14) {
+        //         if (state == Error)
+        //                 HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+        //         HAL_UART_Transmit(&huart2, "hello\r\n", 12, 1000);
+        // }
 }
 /* USER CODE END 4 */
 

@@ -3,7 +3,7 @@
 #include "stdio.h"
 
 void FSM(enum FSM_State *state, UART_HandleTypeDef *huart,
-         ADC_HandleTypeDef *hadc) {
+         ADC_HandleTypeDef *hadc, TIM_HandleTypeDef *htim_pause, TIM_HandleTypeDef *htim_error) {
         switch (*state) {
         case Init:
                 init(state, hadc);
@@ -18,7 +18,7 @@ void FSM(enum FSM_State *state, UART_HandleTypeDef *huart,
                 break;
 
         case Pause:
-                pause(state);
+                pause(state, htim_pause);
                 break;
 
         case Warning:
@@ -26,7 +26,7 @@ void FSM(enum FSM_State *state, UART_HandleTypeDef *huart,
                 break;
 
         case Error:
-                error(state, huart);
+                error(state, huart, htim_error);
                 break;
         }
 }
@@ -93,9 +93,15 @@ void listening(enum FSM_State *state, UART_HandleTypeDef *huart,
         TIM3->CCR1 = (AD_val << 4);
 }
 
-void pause(enum FSM_State *state) {
-        // Led Pin Off
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+void pause(enum FSM_State *state, TIM_HandleTypeDef *htim) {
+        htim->Instance = TIM14;
+        htim->Init.Prescaler = 999999;
+        htim->Init.Period = 143;
+
+        if (TIM14->CNT < TIM14->ARR/2)
+                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_AF2_TIM14);
+        else
+                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
 
         if (!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13))
                 *state = Listening;
@@ -106,9 +112,17 @@ void warning(enum FSM_State *state, UART_HandleTypeDef *huart) {
         HAL_UART_Transmit(huart, warning_msg, sizeof(warning_msg), 100);
 }
 
-void error(enum FSM_State *state, UART_HandleTypeDef *huart) {
+void error(enum FSM_State *state, UART_HandleTypeDef *huart, TIM_HandleTypeDef *htim) {
+        // 400ms = (ARR-1)(PSC-1)/(CLK) = (28799)(999)/(72MHz)
+        htim->Init.Prescaler = 999;
+        htim->Init.Period = 28799;
         uint8_t error_msg[] = "ERROR\r\n";
+
+        TIM14->CCR1 = 1;//TIM14->ARR/2;
+        if (TIM14->CNT < TIM14->ARR/2)
+                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_AF2_TIM14);
+        else
+                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+
         HAL_UART_Transmit(huart, error_msg, sizeof(error_msg), 100);
-        // HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-        // HAL_Delay(1000);
 }

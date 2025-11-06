@@ -3,7 +3,7 @@
 #define SERIAL_MSG_DIM 8
 
 #define HANDLE_HAL_ERROR(status)                                               \
-        if (status == HAL_ERROR) {                                                \
+        if (status == HAL_ERROR) {                                             \
                 *state = Error;                                                \
                 return;                                                        \
         }
@@ -11,12 +11,12 @@
 enum FSM_State { Init, Wait_Request, Listening, Pause, Warning, Error };
 
 void FSM(enum FSM_State *state, UART_HandleTypeDef *huart,
-         ADC_HandleTypeDef *hadc);
+         ADC_HandleTypeDef *hadc, TIM_HandleTypeDef *htim_pause, TIM_HandleTypeDef *htim_error);
 
 void init(enum FSM_State *state, ADC_HandleTypeDef *hadc);
 void wait_request(enum FSM_State *state);
 void listening(enum FSM_State *state, UART_HandleTypeDef *huart,
                ADC_HandleTypeDef *hadc);
-void pause(enum FSM_State *state);
+void pause(enum FSM_State *state, TIM_HandleTypeDef *htim);
 void warning(enum FSM_State *state, UART_HandleTypeDef *huart);
-void error(enum FSM_State *state, UART_HandleTypeDef *huart);
+void error(enum FSM_State *state, UART_HandleTypeDef *huart, TIM_HandleTypeDef *htim);
