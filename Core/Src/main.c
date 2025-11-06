@@ -72,7 +72,7 @@ static void MX_TIM16_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-enum FSM_State state = Error;
+enum FSM_State state = Init;
 /* USER CODE END 0 */
 
 /**
@@ -112,6 +112,7 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM16_Init();
   /* USER CODE BEGIN 2 */
+        HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
         HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
         HAL_TIM_PWM_Start(&htim14, TIM_CHANNEL_1);
 
@@ -531,9 +532,10 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : PA5 */
   GPIO_InitStruct.Pin = GPIO_PIN_5;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Alternate = GPIO_AF5_TIM1;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */

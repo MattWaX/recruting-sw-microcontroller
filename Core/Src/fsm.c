@@ -48,8 +48,10 @@ void wait_request(enum FSM_State *state) {
 
 void listening(enum FSM_State *state, UART_HandleTypeDef *huart,
                ADC_HandleTypeDef *hadc) {
+        // Duty Cycle = 100% = ARR
+        TIM1->CCR1 = TIM1->ARR;
         // Led Pin On
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
 
         // On button press transition to pause
         if (!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13)) {
@@ -94,35 +96,42 @@ void listening(enum FSM_State *state, UART_HandleTypeDef *huart,
 }
 
 void pause(enum FSM_State *state, TIM_HandleTypeDef *htim) {
-        TIM14->PSC = 999;
-        TIM14->ARR = 143999;
-        if (TIM14->CNT < TIM14->ARR/2)
-                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_AF2_TIM14);
-        else
-                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
-
-        if (!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13))
+        if (!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13)) {
                 *state = Listening;
+                return;
+        }
+
+        // 2000ms = (ARR-1)(PSC-1)/(CLK) = (95999)(999)/(48MHz)
+        TIM1->PSC = 999;
+        TIM1->ARR = 95999;
+        // Duty Cycle = 50% = ARR/2
+        TIM1->CCR1 = TIM1->ARR / 2;
+
+        // Led on only half of the period
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 }
 
 void warning(enum FSM_State *state, UART_HandleTypeDef *huart) {
+        // Led off
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+
+        // spam WARNING via serial
         uint8_t warning_msg[] = "WARNING\r\n";
         HAL_UART_Transmit(huart, warning_msg, sizeof(warning_msg), 100);
 }
 
-void error(enum FSM_State *state, UART_HandleTypeDef *huart, TIM_HandleTypeDef *htim) {
-        // 400ms = (ARR-1)(PSC-1)/(CLK) = (28799)(999)/(72MHz)
-        TIM14->PSC = 999;
-        TIM14->ARR = 28799;
-        // __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_1, (uint32_t)(TIM14->ARR/2));
+void error(enum FSM_State *state, UART_HandleTypeDef *huart,
+           TIM_HandleTypeDef *htim) {
+        // 400ms = (ARR-1)(PSC-1)/(CLK) = (19199)(999)/(48MHz)
+        TIM1->PSC = 999;
+        TIM1->ARR = 19199;
+        // Duty Cycle = 50% = ARR/2
+        TIM1->CCR1 = TIM1->ARR / 2;
+
+        // Led on only half of the period
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+
+        // Spam ERROR via serial
         uint8_t error_msg[] = "ERROR\r\n";
-
-        TIM14->CCR1 = TIM14->ARR/2;
-        // TIM14->AF2 = TIM14->CCR1;
-        if (TIM14->CNT < TIM14->ARR/2)
-                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_AF2_TIM14);
-        else
-                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
-
         HAL_UART_Transmit(huart, error_msg, sizeof(error_msg), 100);
 }
