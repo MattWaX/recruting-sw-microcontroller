@@ -3,7 +3,7 @@
 #include "stdio.h"
 
 void FSM(enum FSM_State *state, UART_HandleTypeDef *huart,
-         ADC_HandleTypeDef *hadc, TIM_HandleTypeDef *htim_pause, TIM_HandleTypeDef *htim_error) {
+         ADC_HandleTypeDef *hadc, TIM_HandleTypeDef *htim) {
         switch (*state) {
         case Init:
                 init(state, hadc);
@@ -18,7 +18,7 @@ void FSM(enum FSM_State *state, UART_HandleTypeDef *huart,
                 break;
 
         case Pause:
-                pause(state, htim_pause);
+                pause(state, htim);
                 break;
 
         case Warning:
@@ -26,7 +26,7 @@ void FSM(enum FSM_State *state, UART_HandleTypeDef *huart,
                 break;
 
         case Error:
-                error(state, huart, htim_error);
+                error(state, huart, htim);
                 break;
         }
 }
@@ -94,10 +94,8 @@ void listening(enum FSM_State *state, UART_HandleTypeDef *huart,
 }
 
 void pause(enum FSM_State *state, TIM_HandleTypeDef *htim) {
-        htim->Instance = TIM14;
-        htim->Init.Prescaler = 999999;
-        htim->Init.Period = 143;
-
+        TIM14->PSC = 999;
+        TIM14->ARR = 143999;
         if (TIM14->CNT < TIM14->ARR/2)
                 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_AF2_TIM14);
         else
@@ -114,11 +112,13 @@ void warning(enum FSM_State *state, UART_HandleTypeDef *huart) {
 
 void error(enum FSM_State *state, UART_HandleTypeDef *huart, TIM_HandleTypeDef *htim) {
         // 400ms = (ARR-1)(PSC-1)/(CLK) = (28799)(999)/(72MHz)
-        htim->Init.Prescaler = 999;
-        htim->Init.Period = 28799;
+        TIM14->PSC = 999;
+        TIM14->ARR = 28799;
+        // __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_1, (uint32_t)(TIM14->ARR/2));
         uint8_t error_msg[] = "ERROR\r\n";
 
-        TIM14->CCR1 = 1;//TIM14->ARR/2;
+        TIM14->CCR1 = TIM14->ARR/2;
+        // TIM14->AF2 = TIM14->CCR1;
         if (TIM14->CNT < TIM14->ARR/2)
                 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_AF2_TIM14);
         else

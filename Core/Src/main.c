@@ -68,7 +68,7 @@ static void MX_TIM14_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-enum FSM_State state = Pause;
+enum FSM_State state = Error;
 /* USER CODE END 0 */
 
 /**
@@ -115,16 +115,10 @@ int main(void) {
         /* Infinite loop */
         /* USER CODE BEGIN WHILE */
         while (1) {
+                FSM(&state, &huart2, &hadc1, &htim14);
                 /* USER CODE END WHILE */
 
                 /* USER CODE BEGIN 3 */
-
-                // saving in memory the debug message
-                // sprintf(MSG, "%x\r\n", HAL_ADC_GetValue(&hadc1));
-                // serial transmit of debug information
-                // HAL_UART_Transmit(&huart2, MSG, sizeof(MSG), 100);
-
-                FSM(&state, &huart2, &hadc1, &htim14);
         }
         /* USER CODE END 3 */
 }

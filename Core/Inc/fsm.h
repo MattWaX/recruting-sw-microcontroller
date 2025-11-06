@@ -11,7 +11,7 @@
 enum FSM_State { Init, Wait_Request, Listening, Pause, Warning, Error };
 
 void FSM(enum FSM_State *state, UART_HandleTypeDef *huart,
-         ADC_HandleTypeDef *hadc, TIM_HandleTypeDef *htim_pause, TIM_HandleTypeDef *htim_error);
+         ADC_HandleTypeDef *hadc, TIM_HandleTypeDef *htim);
 
 void init(enum FSM_State *state, ADC_HandleTypeDef *hadc);
 void wait_request(enum FSM_State *state);
