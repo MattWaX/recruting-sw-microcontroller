@@ -1,24 +1,24 @@
 #include "fsm.h"
-#include "main.h"
-#include "stdio.h"
 
 void FSM(enum FSM_State *state, UART_HandleTypeDef *huart,
-         ADC_HandleTypeDef *hadc, TIM_HandleTypeDef *htim) {
+         enum CLI_STATE *cli_state, enum CLI_CMD *cli_cmd,
+         ADC_HandleTypeDef *hadc, uint32_t *ana_log_arr,
+         TIM_HandleTypeDef *htim) {
         switch (*state) {
         case Init:
-                init(state, hadc);
+                init(state, cli_state, cli_cmd, hadc);
                 break;
 
         case Wait_Request:
-                wait_request(state);
+                wait_request(state, cli_state);
                 break;
 
         case Listening:
-                listening(state, huart, hadc);
+                listening(state, huart, cli_state, cli_cmd, hadc, ana_log_arr);
                 break;
 
         case Pause:
-                pause(state, htim);
+                pause(state, cli_state, htim);
                 break;
 
         case Warning:
@@ -31,15 +31,22 @@ void FSM(enum FSM_State *state, UART_HandleTypeDef *huart,
         }
 }
 
-void init(enum FSM_State *state, ADC_HandleTypeDef *hadc) {
+void init(enum FSM_State *state, enum CLI_STATE *cli_state,
+          enum CLI_CMD *cli_cmd, ADC_HandleTypeDef *hadc) {
         HANDLE_HAL_ERROR(HAL_ADCEx_Calibration_Start(hadc));
+
+        *cli_state = CLI_OFF;
+        *cli_cmd = CLI_RAW;
 
         *state = Wait_Request;
 }
 
-void wait_request(enum FSM_State *state) {
+void wait_request(enum FSM_State *state, enum CLI_STATE *cli_state) {
         // Led Pin Off
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+
+        // cli on
+        *cli_state = CLI_ON;
 
         // On button press transition to listening
         if (!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13))
@@ -47,18 +54,21 @@ void wait_request(enum FSM_State *state) {
 }
 
 void listening(enum FSM_State *state, UART_HandleTypeDef *huart,
-               ADC_HandleTypeDef *hadc) {
+               enum CLI_STATE *cli_state, enum CLI_CMD *cli_cmd,
+               ADC_HandleTypeDef *hadc, uint32_t *ana_log_arr) {
         // Duty Cycle = 100% = ARR
         TIM1->CCR1 = TIM1->ARR;
         // Led Pin On
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+
+        // cli off
+        *cli_state = CLI_OFF;
 
         // On button press transition to pause
         if (!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13)) {
                 *state = Pause;
                 return;
         }
-        HAL_StatusTypeDef HAL_status = HAL_OK;
 
         uint32_t AD_val;
         uint8_t D_val;
@@ -72,6 +82,28 @@ void listening(enum FSM_State *state, UART_HandleTypeDef *huart,
         AD_val = 0;
         HANDLE_HAL_ERROR(HAL_ADC_Start_DMA(hadc, &AD_val, 1));
         AD_val = HAL_ADC_GetValue(hadc);
+        // Conversion Complete & DMA Transfer Complete As Well
+        // So The AD_RES Is Now Updated & Let's Move IT To The PWM CCR1
+        // Update The PWM Duty Cycle With Latest ADC Conversion Result
+        TIM3->CCR1 = (AD_val << 4);
+
+        // Moving average
+        if (*cli_cmd == CLI_MOVING_AVERAGE) {
+                uint32_t sum = 0;
+                for (int i = 0; i < ANA_LOG_LEN - 1; ++i) {
+                        sum += ana_log_arr[i];
+                        ana_log_arr[i] = ana_log_arr[i + 1];
+                }
+                sum += AD_val;
+                ana_log_arr[ANA_LOG_LEN - 1] = AD_val;
+                AD_val = sum / ANA_LOG_LEN;
+        }
+        // Random noise
+        else if (*cli_cmd == CLI_NOISE) {
+                AD_val ^= AD_val << (AD_val % 4);
+                AD_val += AD_val ^ (AD_val >> 1);
+                if(AD_val < 500) AD_val += AD_val | (TIM3->ARR);
+        }
 
         // Send data to serial
 
@@ -88,14 +120,14 @@ void listening(enum FSM_State *state, UART_HandleTypeDef *huart,
         // with SerialPlot as raw binary stream
         HANDLE_HAL_ERROR(
             HAL_UART_Transmit(huart, serial_msg, SERIAL_MSG_DIM, 0xFFFF));
-
-        // Conversion Complete & DMA Transfer Complete As Well
-        // So The AD_RES Is Now Updated & Let's Move IT To The PWM CCR1
-        // Update The PWM Duty Cycle With Latest ADC Conversion Result
-        TIM3->CCR1 = (AD_val << 4);
 }
 
-void pause(enum FSM_State *state, TIM_HandleTypeDef *htim) {
+void pause(enum FSM_State *state, enum CLI_STATE *cli_state,
+           TIM_HandleTypeDef *htim) {
+        // cli on
+        *cli_state = CLI_ON;
+
+        // On button press transition to listening
         if (!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13)) {
                 *state = Listening;
                 return;
