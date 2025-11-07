@@ -2,8 +2,7 @@
 
 void FSM(enum FSM_State *state, UART_HandleTypeDef *huart,
          enum CLI_STATE *cli_state, enum CLI_CMD *cli_cmd,
-         ADC_HandleTypeDef *hadc, uint32_t *ana_log_arr,
-         TIM_HandleTypeDef *htim) {
+         ADC_HandleTypeDef *hadc, uint32_t *ana_log_arr) {
         switch (*state) {
         case Init:
                 init(state, cli_state, cli_cmd, hadc);
@@ -18,7 +17,7 @@ void FSM(enum FSM_State *state, UART_HandleTypeDef *huart,
                 break;
 
         case Pause:
-                pause(state, cli_state, htim);
+                pause(state, cli_state);
                 break;
 
         case Warning:
@@ -26,7 +25,7 @@ void FSM(enum FSM_State *state, UART_HandleTypeDef *huart,
                 break;
 
         case Error:
-                error(state, huart, htim);
+                error(state, huart);
                 break;
         }
 }
@@ -122,8 +121,7 @@ void listening(enum FSM_State *state, UART_HandleTypeDef *huart,
             HAL_UART_Transmit(huart, serial_msg, SERIAL_MSG_DIM, 0xFFFF));
 }
 
-void pause(enum FSM_State *state, enum CLI_STATE *cli_state,
-           TIM_HandleTypeDef *htim) {
+void pause(enum FSM_State *state, enum CLI_STATE *cli_state) {
         // cli on
         *cli_state = CLI_ON;
 
@@ -152,8 +150,7 @@ void warning(enum FSM_State *state, UART_HandleTypeDef *huart) {
         HAL_UART_Transmit(huart, warning_msg, sizeof(warning_msg), 100);
 }
 
-void error(enum FSM_State *state, UART_HandleTypeDef *huart,
-           TIM_HandleTypeDef *htim) {
+void error(enum FSM_State *state, UART_HandleTypeDef *huart) {
         // 400ms = (ARR-1)(PSC-1)/(CLK) = (19199)(999)/(48MHz)
         TIM1->PSC = 999;
         TIM1->ARR = 19199;

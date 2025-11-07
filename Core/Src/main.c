@@ -134,8 +134,8 @@ int main(void) {
         /* Infinite loop */
         /* USER CODE BEGIN WHILE */
         while (1) {
-
-                FSM(&state, &huart2,&cli_state, &cli_cmd, &hadc1, ana_log_arr, &htim14);
+                // Finite State Machine on every frame
+                FSM(&state, &huart2,&cli_state, &cli_cmd, &hadc1, ana_log_arr);
 
                 // CLI logic
                 if (cli_state == CLI_ON && cmd_received) {
@@ -152,10 +152,6 @@ int main(void) {
                         cmd_received = 0;
                         HAL_UART_Receive_IT(&huart2, cmd_buffer, (size_t)1);
                 }
-                // TODO: remove debug
-                // uint8_t MSG[16] = {'\0'};
-                // sprintf(MSG, "%d | %d\r\n",cli_cmd, cli_state);
-                // HAL_UART_Transmit(&huart2, MSG, 16, 0xFFFF);
         }
         /* USER CODE END WHILE */
 

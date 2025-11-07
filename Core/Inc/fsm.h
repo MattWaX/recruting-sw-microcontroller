@@ -16,8 +16,7 @@ enum FSM_State { Init, Wait_Request, Listening, Pause, Warning, Error };
 
 void FSM(enum FSM_State *state, UART_HandleTypeDef *huart,
          enum CLI_STATE *cli_state, enum CLI_CMD *cli_cmd,
-         ADC_HandleTypeDef *hadc, uint32_t *ana_log_arr,
-         TIM_HandleTypeDef *htim);
+         ADC_HandleTypeDef *hadc, uint32_t *ana_log_arr);
 
 void init(enum FSM_State *state, enum CLI_STATE *cli_state,
           enum CLI_CMD *cli_cmd, ADC_HandleTypeDef *hadc);
@@ -25,8 +24,6 @@ void wait_request(enum FSM_State *state, enum CLI_STATE *cli_state);
 void listening(enum FSM_State *state, UART_HandleTypeDef *huart,
                enum CLI_STATE *cli_state, enum CLI_CMD *cli_cmd,
                ADC_HandleTypeDef *hadc, uint32_t *ana_log_arr);
-void pause(enum FSM_State *state, enum CLI_STATE *cli_state,
-           TIM_HandleTypeDef *htim);
+void pause(enum FSM_State *state, enum CLI_STATE *cli_state);
 void warning(enum FSM_State *state, UART_HandleTypeDef *huart);
-void error(enum FSM_State *state, UART_HandleTypeDef *huart,
-           TIM_HandleTypeDef *htim);
+void error(enum FSM_State *state, UART_HandleTypeDef *huart);
