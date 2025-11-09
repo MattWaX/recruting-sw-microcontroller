@@ -21,8 +21,8 @@ following states:
 - **Pause**: Same as Wait Request but the on-board led is blinking with a
   period of 2000ms and a duty cycle of 50%
 - **Warning**: The state is entered when the digital pin, in the Listening
-  state, reads 0 for more than 5 seconds uninterrupted, then it spam `WARNING`
-  in the serial
+  state, reads 0 for more than 5 seconds uninterrupted (not implemented), then 
+  it spam `WARNING` in the serial
 - **Error**: If any error occur in any state the FSM will transition to this
   state. The on-board led will blink with a period of 400ms and a duty cycle of
   50% and in the serial it will be spammed `ERROR`, the only way to exit the
